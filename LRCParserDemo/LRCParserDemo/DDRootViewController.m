@@ -7,7 +7,7 @@
 //
 
 #import "DDRootViewController.h"
-#import "DDAudioLRCParser.h"
+#import "LRCParser/DDAudioLRCParser.h"
 #import "DDDetailViewController.h"
 
 @interface DDRootViewController ()

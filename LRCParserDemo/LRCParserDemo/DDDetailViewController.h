@@ -7,7 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "DDAudioLRCParser.h"
+#import "LRCParser/DDAudioLRCParser.h"
 
 @interface DDDetailViewController : UITableViewController
 @property (strong, nonatomic) DDAudioLRC *lrc;
