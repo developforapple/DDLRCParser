@@ -29,19 +29,24 @@
                       kDDLRCMetadataKeyBY,
                       kDDLRCMetadataKeyOFFSET];
     
-    NSString *reg = @"\\[(\\d{0,2}:\\d{0,2}[.|:]\\d{0,2})\\].*?";
-    NSRegularExpression *re = [NSRegularExpression regularExpressionWithPattern:reg options:NSRegularExpressionCaseInsensitive error:nil];
-    NSString *reg2 = @".*\\[\\d{0,2}:\\d{0,2}[.|:]\\d{0,2}\\](.*)";
-    NSRegularExpression *re2 = [NSRegularExpression regularExpressionWithPattern:reg2 options:NSRegularExpressionCaseInsensitive error:nil];
+    NSString * reg = @"(\\[\\d{0,2}:\\d{0,2}([.|:]\\d{0,2})?\\])";
+    NSRegularExpression * eachTimeReg = [NSRegularExpression regularExpressionWithPattern:reg options:NSRegularExpressionCaseInsensitive error:nil];
+    
+    NSString *reg2 = @"(\\[\\d{0,2}:\\d{0,2}([.|:]\\d{0,2})?\\])+";
+    NSRegularExpression * allTimeReg = [NSRegularExpression regularExpressionWithPattern:reg2 options:NSRegularExpressionCaseInsensitive error:nil];
     
     NSMutableArray *units = [NSMutableArray array];
-    
     NSArray *lines = [lrc componentsSeparatedByString:@"\n"];
+    
+    NSString *sec;
+    NSArray *matches;
+    NSString *modifyString;
+    
+    
     for (NSString *aLine in lines) {
         if (aLine.length <= 1) {
             continue;
         }
-        
         BOOL isATag = NO;
         
         //歌曲信息
@@ -63,30 +68,27 @@
             continue;
         }
         
-        //歌词信息
-        NSArray *matches = [re matchesInString:aLine options:0 range:NSMakeRange(0, aLine.length)];
+        // 歌词时间信息
+        matches = [eachTimeReg matchesInString:aLine options:0 range:NSMakeRange(0, aLine.length)];
+        
+        /**< 歌词*/
+        modifyString = [allTimeReg  stringByReplacingMatchesInString:aLine options:0 range:NSMakeRange(0, aLine.length) withTemplate:@""];
         
         for (NSTextCheckingResult *result in matches) {
-            NSUInteger count = result.numberOfRanges;
-            if (count >= 2) {
-                NSRange secRange = [result rangeAtIndex:1];
-                NSString *secString = [[aLine substringWithRange:secRange] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-                
-                [re2 enumerateMatchesInString:aLine options:0 range:NSMakeRange(0, aLine.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop) {
-                    NSUInteger count = result.numberOfRanges;
-                    if (count >= 2) {
-                        NSRange lrcRange = [result rangeAtIndex:1];
-                        NSString *lrc = [aLine substringWithRange:lrcRange];
-                        
-                        DDAudioLRCUnit *unit = [DDAudioLRCUnit new];
-                        unit.secString = secString;
-                        unit.lrc = lrc;
-                        [units addObject:unit];
-                    }
-                }];
+            if (result.range.location == NSNotFound) {
+                continue;
             }
+            sec = [aLine substringWithRange:result.range];
+            sec = [sec stringByReplacingOccurrencesOfString:@"[" withString:@""];
+            sec = [sec stringByReplacingOccurrencesOfString:@"]" withString:@""];
+            
+            DDAudioLRCUnit *unit = [DDAudioLRCUnit new];
+            unit.secString = sec;
+            unit.lrc = modifyString;
+            [units addObject:unit];
         }
     }
+    
     tmp.units = [self sortedLRCUnits:units];
     tmp.originLRCText = lrc;
     return tmp;
@@ -245,17 +247,20 @@ NSString *kDDLRCMetadataKeyTIME = @"t_time";
     NSInteger s = 0;   //秒
     NSInteger ms = 0;  //毫秒
     
-    NSScanner *scanner = [NSScanner scannerWithString:secString];
-    NSCharacterSet *set = [NSCharacterSet decimalDigitCharacterSet];
+    NSArray * components = [secString componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@":."]];
+    if (components && components.count >= 2) {
+        m = [components[0] integerValue];
+        s = [components[1] integerValue];
+        if (components.count == 3) {
+            ms = [components[2] integerValue];
+        }else{
+            ms = 0;
+        }
+    }else{
+        s = INT_MAX;
+    }
     
-    [scanner scanUpToCharactersFromSet:set intoString:nil];
-    [scanner scanInteger:&m];
-    [scanner scanUpToCharactersFromSet:set intoString:nil];
-    [scanner scanInteger:&s];
-    [scanner scanUpToCharactersFromSet:set intoString:nil];
-    [scanner scanInteger:&ms];
-    
-    NSTimeInterval time = m*60 + s + ms*0.01;
+    NSTimeInterval time = m*60 + s + ms*0.001;
     self->_sec = time;
 }
 

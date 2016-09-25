@@ -17,6 +17,27 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    
+    NSString * test = @"[00:53.00][01:43.88][02:1]虽然无所谓写在脸上";
+    NSString * regex = @"(\\[\\d{0,2}:\\d{0,2}([.|:]\\d{0,2})?\\])";
+
+    NSRegularExpression * re = [NSRegularExpression regularExpressionWithPattern:regex options:NSRegularExpressionCaseInsensitive error:nil];
+    
+    NSString * modefiy = [re stringByReplacingMatchesInString:test options:0 range:NSMakeRange(0, test.length) withTemplate:@""];
+    
+    
+    if (re) {
+        NSArray * results = [re matchesInString:test options:0 range:NSMakeRange(0, test.length)];
+        
+        for (NSTextCheckingResult * res in results) {
+            
+            NSString * substr = [test substringWithRange: res.range];
+            NSLog(@"findstring is %@",substr);
+        }
+    }
+    
+    
+    
     return YES;
 }
 
