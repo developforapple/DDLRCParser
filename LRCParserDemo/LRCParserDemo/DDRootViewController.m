@@ -7,7 +7,6 @@
 //
 
 #import "DDRootViewController.h"
-#import "LRCParser/DDAudioLRCParser.h"
 #import "DDDetailViewController.h"
 
 @interface DDRootViewController ()
@@ -23,16 +22,10 @@
 {
     if (indexPath.row == 0) {
         NSString *path = [[NSBundle mainBundle] pathForResource:@"TestLRC1" ofType:@""];
-        NSString *text = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
-        
-        DDAudioLRC *lrc = [DDAudioLRCParser parserLRCText:text];
-        [self performSegueWithIdentifier:@"SegueIdentifier" sender:lrc];
+        [self performSegueWithIdentifier:@"SegueIdentifier" sender:path];
     }else{
         NSString *path = [[NSBundle mainBundle] pathForResource:@"TestLRC2" ofType:@""];
-        NSString *text = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
-        
-        DDAudioLRC *lrc = [DDAudioLRCParser parserLRCText:text];
-        [self performSegueWithIdentifier:@"SegueIdentifier" sender:lrc];
+        [self performSegueWithIdentifier:@"SegueIdentifier" sender:path];
     }
 }
 
@@ -40,7 +33,7 @@
 {
     if ([segue.identifier isEqualToString:@"SegueIdentifier"]) {
         DDDetailViewController *vc = segue.destinationViewController;
-        vc.lrc = sender;
+        vc.lrcPath = sender;
     }
 }
 

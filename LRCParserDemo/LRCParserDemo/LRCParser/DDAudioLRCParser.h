@@ -6,15 +6,37 @@
 //  Copyright © 2016年 Bo Wang. All rights reserved.
 //
 
+
 #import <Foundation/Foundation.h>
+
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class DDAudioLRC;
 @class DDAudioLRCUnit;
 
+@protocol DDAudioLRCParserDelegate <NSObject>
+
+@optional
+/**
+ 构造完成
+ @param AudioLRC
+ */
+- (void)parserDidFinishWithLRC:( DDAudioLRC * _Nullable)AudioLRC;
+
+- (void)parserDidFailWithError:(NSError *)err;
+
+@end
+
+
 @interface DDAudioLRCParser : NSObject
-+ (nullable DDAudioLRC *)parserLRCText:(NSString *)lrc;
+
+- (void)parserLRCTextAtFilePath:(NSString *)lrcPath WithDelegate:(id<DDAudioLRCParserDelegate>)delegate;
+
+@property (nonatomic,strong,nullable) DDAudioLRC *AudioLRC;
+@property (nonatomic,weak,nullable) id<DDAudioLRCParserDelegate> delegate;
+
+
 @end
 
 FOUNDATION_EXTERN const NSString *kDDLRCMetadataKeyTI;//歌曲名

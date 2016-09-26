@@ -10,5 +10,5 @@
 #import "LRCParser/DDAudioLRCParser.h"
 
 @interface DDDetailViewController : UITableViewController
-@property (strong, nonatomic) DDAudioLRC *lrc;
+@property (strong, nonatomic) NSString *lrcPath;
 @end

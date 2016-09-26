@@ -7,22 +7,32 @@
 //
 
 #import "DDAudioLRCParser.h"
+#import "ZXCommonTool.h"
+
 
 @implementation DDAudioLRCParser
 
-+ (DDAudioLRC *)parserLRCText:(NSString *)lrc
+
+- (void)parserLRCTextAtFilePath:(NSString *)lrcPath WithDelegate:(id<DDAudioLRCParserDelegate>)delegate;
 {
-    return [self parser:lrc];
+    self.delegate = delegate;
+    [self performSelectorInBackground:@selector(parserInBackgroundAtFilePath:) withObject:lrcPath];
 }
 
-+ (DDAudioLRC *)parser:(NSString *)lrc
+
+- (void)parserInBackgroundAtFilePath:(NSString *)lrcPath
 {
-    if (!lrc || lrc.length == 0) {
-        return nil;
+    if ([ZXCommonTool zx_strIsEmpty:lrcPath]) {
+        [self deliverFailDelegateWithCode:-1];
+        return;
+    }
+    NSString * lrc = [NSString stringWithContentsOfFile:lrcPath encoding:NSUTF8StringEncoding error:nil];
+    if ([ZXCommonTool zx_strIsEmpty:lrc]) {
+        [self deliverFailDelegateWithCode:-2];
+        return;
     }
     
     DDAudioLRC *tmp = [DDAudioLRC new];
-    
     NSArray *tags = @[kDDLRCMetadataKeyTI,
                       kDDLRCMetadataKeyAR,
                       kDDLRCMetadataKeyAL,
@@ -30,7 +40,6 @@
                       kDDLRCMetadataKeyOFFSET,
                       kDDLRCMetadataKeyTIME
                       ];
-    
     NSString * reg = @"(\\[\\d{0,2}:\\d{0,2}([.|:]\\d{0,2})?\\])";
     NSRegularExpression * eachTimeReg = [NSRegularExpression regularExpressionWithPattern:reg options:NSRegularExpressionCaseInsensitive error:nil];
     
@@ -43,7 +52,6 @@
     NSString *sec;
     NSArray *matches;
     NSString *modifyString;
-    
     
     for (NSString *aLine in lines) {
         if (aLine.length <= 1) {
@@ -76,27 +84,37 @@
         /**< 歌词*/
         modifyString = [allTimeReg  stringByReplacingMatchesInString:aLine options:0 range:NSMakeRange(0, aLine.length) withTemplate:@""];
         
-        for (NSTextCheckingResult *result in matches) {
+        for (int i = 0; i<matches.count; i++) {
+            
+            NSTextCheckingResult * result = matches[i];
             if (result.range.location == NSNotFound) {
                 continue;
             }
             sec = [aLine substringWithRange:result.range];
             sec = [sec stringByReplacingOccurrencesOfString:@"[" withString:@""];
             sec = [sec stringByReplacingOccurrencesOfString:@"]" withString:@""];
-            
+            if ([ZXCommonTool zx_strIsEmpty:sec]) {
+                continue;
+            }
             DDAudioLRCUnit *unit = [DDAudioLRCUnit new];
-            unit.secString = sec;
+            [unit configSecString:sec andIsEnd:NO];
             unit.lrc = modifyString;
             [units addObject:unit];
+            
         }
     }
     
     tmp.units = [self sortedLRCUnits:units];
     tmp.originLRCText = lrc;
-    return tmp;
+    __weak __typeof(self) weakself = self;
+    [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+        weakself.AudioLRC = tmp;
+        [weakself deliverFinishDelegateWithLrc:tmp];
+    }];
 }
 
-+ (NSArray<DDAudioLRCUnit *> *)sortedLRCUnits:(NSArray<DDAudioLRCUnit *> *)units
+
+- (NSArray<DDAudioLRCUnit *> *)sortedLRCUnits:(NSArray<DDAudioLRCUnit *> *)units
 {
     //按时间排序
     NSArray *sorted = [units sortedArrayUsingComparator:^NSComparisonResult(DDAudioLRCUnit *obj1, DDAudioLRCUnit *obj2) {
@@ -119,6 +137,47 @@
         }
     }
     return sorted;
+}
+
+
+#pragma mark - deal delegate
+
+- (NSError *)errWithCode:(NSInteger)code{
+    
+    NSError * err = [NSError errorWithDomain:NSCocoaErrorDomain code:code userInfo:@{@"message":[NSString stringWithFormat:@"error code %ld",(long)code]}];
+    return err;
+}
+
+- (void)deliverFailDelegateWithCode:(NSInteger)code{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(parserDidFailWithError:)]) {
+        
+        __weak __typeof(self) weakself = self;
+        void (^ block)(void) =  ^(void){
+            NSError * err = [self errWithCode:code];
+            [weakself.delegate parserDidFailWithError:err];
+        };
+        [self safeExeBlock:block];
+    }
+}
+
+- (void)deliverFinishDelegateWithLrc:(DDAudioLRC *)alrc{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(parserDidFinishWithLRC:)]) {
+        
+        __weak __typeof(self) weakself = self;
+        void (^ block)(void) =  ^(void){
+            [weakself.delegate parserDidFinishWithLRC:alrc];
+        };
+        [self safeExeBlock:block];
+    }
+}
+
+- (void)safeExeBlock:(dispatch_block_t)block{
+    
+    if ([NSThread isMainThread]) {
+        block();
+    }else{
+        [[NSOperationQueue mainQueue] addOperationWithBlock:block];
+    }
 }
 
 @end
