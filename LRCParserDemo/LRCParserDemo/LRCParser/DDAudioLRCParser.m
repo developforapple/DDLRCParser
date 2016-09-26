@@ -27,7 +27,9 @@
                       kDDLRCMetadataKeyAR,
                       kDDLRCMetadataKeyAL,
                       kDDLRCMetadataKeyBY,
-                      kDDLRCMetadataKeyOFFSET];
+                      kDDLRCMetadataKeyOFFSET,
+                      kDDLRCMetadataKeyTIME
+                      ];
     
     NSString * reg = @"(\\[\\d{0,2}:\\d{0,2}([.|:]\\d{0,2})?\\])";
     NSRegularExpression * eachTimeReg = [NSRegularExpression regularExpressionWithPattern:reg options:NSRegularExpressionCaseInsensitive error:nil];
@@ -104,6 +106,18 @@
             return NSOrderedDescending;
         }
     }];
+    
+    DDAudioLRCUnit * first;
+    DDAudioLRCUnit * second;
+    for (int i = 0; i<sorted.count; i++) {
+        first = sorted[i];
+        if (i+1 >= sorted.count) {
+            [first configSecString:@"60000:50:00" andIsEnd:YES];
+        }else{
+            second = sorted[i+1];
+            [first configSecString:second.secString andIsEnd:YES];
+        }
+    }
     return sorted;
 }
 
@@ -156,7 +170,7 @@ NSString *kDDLRCMetadataKeyTIME = @"t_time";
     
     NSMutableIndexSet *indexSets = [NSMutableIndexSet indexSet];
     [self.units enumerateObjectsUsingBlock:^(DDAudioLRCUnit *obj, NSUInteger idx, BOOL *stop) {
-        if (obj.sec >= start && obj.sec <= end) {
+        if (start >= obj.sec && start <= obj.end) {
             [indexSets addIndex:idx];
         }
         if (obj.sec > end) {
@@ -166,10 +180,7 @@ NSString *kDDLRCMetadataKeyTIME = @"t_time";
     
     NSUInteger firstIndex = [indexSets firstIndex];
     NSUInteger lastIndex = [indexSets lastIndex];
-    if (firstIndex > 0) {
-        firstIndex --;
-    }
-    
+
     NSUInteger numberOfLines = lastIndex - firstIndex + 1;
     NSRange range = NSMakeRange(firstIndex, numberOfLines);
     return range;
@@ -239,9 +250,12 @@ NSString *kDDLRCMetadataKeyTIME = @"t_time";
 
 @implementation DDAudioLRCUnit
 
-- (void)setSecString:(NSString *)secString
+
+- (void)configSecString:(NSString *)secString andIsEnd:(BOOL)isend
 {
-    _secString = secString;
+    if (!isend) {
+        _secString = secString; //eg 33:33:21
+    }
     
     NSInteger m = 0;   //分
     NSInteger s = 0;   //秒
@@ -261,11 +275,17 @@ NSString *kDDLRCMetadataKeyTIME = @"t_time";
     }
     
     NSTimeInterval time = m*60 + s + ms*0.001;
-    self->_sec = time;
+    if (isend) {
+        self -> _end = time;
+    }else{
+        self->_sec = time;
+    }
 }
+
+
 
 - (NSString *)description
 {
-    return [NSString stringWithFormat:@"%@, timeSecond:%.0f , LRC:%@",[super description],self.sec,self.lrc];
+    return [NSString stringWithFormat:@"%@, start:%.2f end %.2f, LRC:%@",[super description],self.sec,self.end,self.lrc];
 }
 @end

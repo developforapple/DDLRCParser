@@ -47,8 +47,11 @@ FOUNDATION_EXTERN const NSString *kDDLRCMetadataKeyTIME;//时长
 
 @interface DDAudioLRCUnit : NSObject
 @property (nullable, strong, nonatomic) NSString *secString;
-@property (assign, readonly, nonatomic) NSTimeInterval sec;
+@property (assign, readonly, nonatomic) NSTimeInterval sec; // 起始时间
+@property (assign, readonly, nonatomic) NSTimeInterval end; // 结束时间 也就是下一个的起始时间
 @property (nullable, strong, nonatomic) NSString *lrc;
+
+- (void)configSecString:(NSString *)secString andIsEnd:(BOOL)isend;
 @end
 
 NS_ASSUME_NONNULL_END
