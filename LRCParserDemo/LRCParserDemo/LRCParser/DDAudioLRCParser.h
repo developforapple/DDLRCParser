@@ -6,15 +6,37 @@
 //  Copyright © 2016年 Bo Wang. All rights reserved.
 //
 
+
 #import <Foundation/Foundation.h>
+
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class DDAudioLRC;
 @class DDAudioLRCUnit;
 
+@protocol DDAudioLRCParserDelegate <NSObject>
+
+@optional
+/**
+ 构造完成
+ @param AudioLRC
+ */
+- (void)parserDidFinishWithLRC:( DDAudioLRC * _Nullable)AudioLRC;
+
+- (void)parserDidFailWithError:(NSError *)err;
+
+@end
+
+
 @interface DDAudioLRCParser : NSObject
-+ (nullable DDAudioLRC *)parserLRCText:(NSString *)lrc;
+
+- (void)parserLRCTextAtFilePath:(NSString *)lrcPath WithDelegate:(id<DDAudioLRCParserDelegate>)delegate;
+
+@property (nonatomic,strong,nullable) DDAudioLRC *AudioLRC;
+@property (nonatomic,weak,nullable) id<DDAudioLRCParserDelegate> delegate;
+
+
 @end
 
 FOUNDATION_EXTERN const NSString *kDDLRCMetadataKeyTI;//歌曲名
@@ -47,8 +69,11 @@ FOUNDATION_EXTERN const NSString *kDDLRCMetadataKeyTIME;//时长
 
 @interface DDAudioLRCUnit : NSObject
 @property (nullable, strong, nonatomic) NSString *secString;
-@property (assign, readonly, nonatomic) NSTimeInterval sec;
+@property (assign, readonly, nonatomic) NSTimeInterval sec; // 起始时间
+@property (assign, readonly, nonatomic) NSTimeInterval end; // 结束时间 也就是下一个的起始时间
 @property (nullable, strong, nonatomic) NSString *lrc;
+
+- (void)configSecString:(NSString *)secString andIsEnd:(BOOL)isend;
 @end
 
 NS_ASSUME_NONNULL_END

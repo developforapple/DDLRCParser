@@ -7,12 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D37A8021D98D0CB00C7A51E /* ZXCommonTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D37A8011D98D0CB00C7A51E /* ZXCommonTool.m */; };
+		0D9D08F91D96759800C2B742 /* DDAudioLRCParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D9D08F81D96759800C2B742 /* DDAudioLRCParser.m */; };
 		985836911C7E9B66007E6CB5 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 985836901C7E9B66007E6CB5 /* main.m */; };
 		985836941C7E9B66007E6CB5 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 985836931C7E9B66007E6CB5 /* AppDelegate.m */; };
 		9858369A1C7E9B66007E6CB5 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 985836981C7E9B66007E6CB5 /* Main.storyboard */; };
 		9858369C1C7E9B66007E6CB5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9858369B1C7E9B66007E6CB5 /* Assets.xcassets */; };
 		9858369F1C7E9B66007E6CB5 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9858369D1C7E9B66007E6CB5 /* LaunchScreen.storyboard */; };
-		985836A81C7E9B7E007E6CB5 /* DDAudioLRCParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 985836A71C7E9B7E007E6CB5 /* DDAudioLRCParser.m */; };
 		985836AA1C7ECC73007E6CB5 /* TestLRC1 in Resources */ = {isa = PBXBuildFile; fileRef = 985836A91C7ECC73007E6CB5 /* TestLRC1 */; };
 		985836AC1C7ECD04007E6CB5 /* TestLRC2 in Resources */ = {isa = PBXBuildFile; fileRef = 985836AB1C7ECD04007E6CB5 /* TestLRC2 */; };
 		985836B01C7ECEA8007E6CB5 /* DDRootViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 985836AF1C7ECEA8007E6CB5 /* DDRootViewController.m */; };
@@ -20,6 +21,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0D37A8001D98D0CB00C7A51E /* ZXCommonTool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZXCommonTool.h; sourceTree = "<group>"; };
+		0D37A8011D98D0CB00C7A51E /* ZXCommonTool.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZXCommonTool.m; sourceTree = "<group>"; };
+		0D9D08F71D96759800C2B742 /* DDAudioLRCParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DDAudioLRCParser.h; sourceTree = "<group>"; };
+		0D9D08F81D96759800C2B742 /* DDAudioLRCParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DDAudioLRCParser.m; sourceTree = "<group>"; };
 		9858368C1C7E9B66007E6CB5 /* LRCParserDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LRCParserDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		985836901C7E9B66007E6CB5 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		985836921C7E9B66007E6CB5 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -28,8 +33,6 @@
 		9858369B1C7E9B66007E6CB5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9858369E1C7E9B66007E6CB5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		985836A01C7E9B66007E6CB5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		985836A61C7E9B7E007E6CB5 /* DDAudioLRCParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DDAudioLRCParser.h; sourceTree = "<group>"; };
-		985836A71C7E9B7E007E6CB5 /* DDAudioLRCParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DDAudioLRCParser.m; sourceTree = "<group>"; };
 		985836A91C7ECC73007E6CB5 /* TestLRC1 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = TestLRC1; sourceTree = "<group>"; };
 		985836AB1C7ECD04007E6CB5 /* TestLRC2 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = TestLRC2; sourceTree = "<group>"; };
 		985836AE1C7ECEA8007E6CB5 /* DDRootViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DDRootViewController.h; sourceTree = "<group>"; };
@@ -49,6 +52,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0D9D08F61D96759800C2B742 /* LRCParser */ = {
+			isa = PBXGroup;
+			children = (
+				0D37A8001D98D0CB00C7A51E /* ZXCommonTool.h */,
+				0D37A8011D98D0CB00C7A51E /* ZXCommonTool.m */,
+				0D9D08F71D96759800C2B742 /* DDAudioLRCParser.h */,
+				0D9D08F81D96759800C2B742 /* DDAudioLRCParser.m */,
+			);
+			path = LRCParser;
+			sourceTree = "<group>";
+		};
 		985836831C7E9B66007E6CB5 = {
 			isa = PBXGroup;
 			children = (
@@ -68,8 +82,7 @@
 		9858368E1C7E9B66007E6CB5 /* LRCParserDemo */ = {
 			isa = PBXGroup;
 			children = (
-				985836A61C7E9B7E007E6CB5 /* DDAudioLRCParser.h */,
-				985836A71C7E9B7E007E6CB5 /* DDAudioLRCParser.m */,
+				0D9D08F61D96759800C2B742 /* LRCParser */,
 				985836921C7E9B66007E6CB5 /* AppDelegate.h */,
 				985836931C7E9B66007E6CB5 /* AppDelegate.m */,
 				985836AD1C7ECE83007E6CB5 /* UI */,
@@ -176,10 +189,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				985836B01C7ECEA8007E6CB5 /* DDRootViewController.m in Sources */,
-				985836A81C7E9B7E007E6CB5 /* DDAudioLRCParser.m in Sources */,
 				985836941C7E9B66007E6CB5 /* AppDelegate.m in Sources */,
+				0D37A8021D98D0CB00C7A51E /* ZXCommonTool.m in Sources */,
 				985836911C7E9B66007E6CB5 /* main.m in Sources */,
 				985836B31C7ECEB8007E6CB5 /* DDDetailViewController.m in Sources */,
+				0D9D08F91D96759800C2B742 /* DDAudioLRCParser.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -326,6 +340,7 @@
 				985836A51C7E9B66007E6CB5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

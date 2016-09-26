@@ -7,41 +7,56 @@
 //
 
 #import "DDAudioLRCParser.h"
+#import "ZXCommonTool.h"
+
 
 @implementation DDAudioLRCParser
 
-+ (DDAudioLRC *)parserLRCText:(NSString *)lrc
+
+- (void)parserLRCTextAtFilePath:(NSString *)lrcPath WithDelegate:(id<DDAudioLRCParserDelegate>)delegate;
 {
-    return [self parser:lrc];
+    self.delegate = delegate;
+    [self performSelectorInBackground:@selector(parserInBackgroundAtFilePath:) withObject:lrcPath];
 }
 
-+ (DDAudioLRC *)parser:(NSString *)lrc
+
+- (void)parserInBackgroundAtFilePath:(NSString *)lrcPath
 {
-    if (!lrc || lrc.length == 0) {
-        return nil;
+    if ([ZXCommonTool zx_strIsEmpty:lrcPath]) {
+        [self deliverFailDelegateWithCode:-1];
+        return;
+    }
+    NSString * lrc = [NSString stringWithContentsOfFile:lrcPath encoding:NSUTF8StringEncoding error:nil];
+    if ([ZXCommonTool zx_strIsEmpty:lrc]) {
+        [self deliverFailDelegateWithCode:-2];
+        return;
     }
     
     DDAudioLRC *tmp = [DDAudioLRC new];
-    
     NSArray *tags = @[kDDLRCMetadataKeyTI,
                       kDDLRCMetadataKeyAR,
                       kDDLRCMetadataKeyAL,
                       kDDLRCMetadataKeyBY,
-                      kDDLRCMetadataKeyOFFSET];
+                      kDDLRCMetadataKeyOFFSET,
+                      kDDLRCMetadataKeyTIME
+                      ];
+    NSString * reg = @"(\\[\\d{0,2}:\\d{0,2}([.|:]\\d{0,2})?\\])";
+    NSRegularExpression * eachTimeReg = [NSRegularExpression regularExpressionWithPattern:reg options:NSRegularExpressionCaseInsensitive error:nil];
     
-    NSString *reg = @"\\[(\\d{0,2}:\\d{0,2}[.|:]\\d{0,2})\\].*?";
-    NSRegularExpression *re = [NSRegularExpression regularExpressionWithPattern:reg options:NSRegularExpressionCaseInsensitive error:nil];
-    NSString *reg2 = @".*\\[\\d{0,2}:\\d{0,2}[.|:]\\d{0,2}\\](.*)";
-    NSRegularExpression *re2 = [NSRegularExpression regularExpressionWithPattern:reg2 options:NSRegularExpressionCaseInsensitive error:nil];
+    NSString *reg2 = @"(\\[\\d{0,2}:\\d{0,2}([.|:]\\d{0,2})?\\])+";
+    NSRegularExpression * allTimeReg = [NSRegularExpression regularExpressionWithPattern:reg2 options:NSRegularExpressionCaseInsensitive error:nil];
     
     NSMutableArray *units = [NSMutableArray array];
-    
     NSArray *lines = [lrc componentsSeparatedByString:@"\n"];
+    
+    NSString *sec;
+    NSArray *matches;
+    NSString *modifyString;
+    
     for (NSString *aLine in lines) {
         if (aLine.length <= 1) {
             continue;
         }
-        
         BOOL isATag = NO;
         
         //歌曲信息
@@ -63,36 +78,43 @@
             continue;
         }
         
-        //歌词信息
-        NSArray *matches = [re matchesInString:aLine options:0 range:NSMakeRange(0, aLine.length)];
+        // 歌词时间信息
+        matches = [eachTimeReg matchesInString:aLine options:0 range:NSMakeRange(0, aLine.length)];
         
-        for (NSTextCheckingResult *result in matches) {
-            NSUInteger count = result.numberOfRanges;
-            if (count >= 2) {
-                NSRange secRange = [result rangeAtIndex:1];
-                NSString *secString = [[aLine substringWithRange:secRange] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-                
-                [re2 enumerateMatchesInString:aLine options:0 range:NSMakeRange(0, aLine.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop) {
-                    NSUInteger count = result.numberOfRanges;
-                    if (count >= 2) {
-                        NSRange lrcRange = [result rangeAtIndex:1];
-                        NSString *lrc = [aLine substringWithRange:lrcRange];
-                        
-                        DDAudioLRCUnit *unit = [DDAudioLRCUnit new];
-                        unit.secString = secString;
-                        unit.lrc = lrc;
-                        [units addObject:unit];
-                    }
-                }];
+        /**< 歌词*/
+        modifyString = [allTimeReg  stringByReplacingMatchesInString:aLine options:0 range:NSMakeRange(0, aLine.length) withTemplate:@""];
+        
+        for (int i = 0; i<matches.count; i++) {
+            
+            NSTextCheckingResult * result = matches[i];
+            if (result.range.location == NSNotFound) {
+                continue;
             }
+            sec = [aLine substringWithRange:result.range];
+            sec = [sec stringByReplacingOccurrencesOfString:@"[" withString:@""];
+            sec = [sec stringByReplacingOccurrencesOfString:@"]" withString:@""];
+            if ([ZXCommonTool zx_strIsEmpty:sec]) {
+                continue;
+            }
+            DDAudioLRCUnit *unit = [DDAudioLRCUnit new];
+            [unit configSecString:sec andIsEnd:NO];
+            unit.lrc = modifyString;
+            [units addObject:unit];
+            
         }
     }
+    
     tmp.units = [self sortedLRCUnits:units];
     tmp.originLRCText = lrc;
-    return tmp;
+    __weak __typeof(self) weakself = self;
+    [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+        weakself.AudioLRC = tmp;
+        [weakself deliverFinishDelegateWithLrc:tmp];
+    }];
 }
 
-+ (NSArray<DDAudioLRCUnit *> *)sortedLRCUnits:(NSArray<DDAudioLRCUnit *> *)units
+
+- (NSArray<DDAudioLRCUnit *> *)sortedLRCUnits:(NSArray<DDAudioLRCUnit *> *)units
 {
     //按时间排序
     NSArray *sorted = [units sortedArrayUsingComparator:^NSComparisonResult(DDAudioLRCUnit *obj1, DDAudioLRCUnit *obj2) {
@@ -102,7 +124,60 @@
             return NSOrderedDescending;
         }
     }];
+    
+    DDAudioLRCUnit * first;
+    DDAudioLRCUnit * second;
+    for (int i = 0; i<sorted.count; i++) {
+        first = sorted[i];
+        if (i+1 >= sorted.count) {
+            [first configSecString:@"60000:50:00" andIsEnd:YES];
+        }else{
+            second = sorted[i+1];
+            [first configSecString:second.secString andIsEnd:YES];
+        }
+    }
     return sorted;
+}
+
+
+#pragma mark - deal delegate
+
+- (NSError *)errWithCode:(NSInteger)code{
+    
+    NSError * err = [NSError errorWithDomain:NSCocoaErrorDomain code:code userInfo:@{@"message":[NSString stringWithFormat:@"error code %ld",(long)code]}];
+    return err;
+}
+
+- (void)deliverFailDelegateWithCode:(NSInteger)code{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(parserDidFailWithError:)]) {
+        
+        __weak __typeof(self) weakself = self;
+        void (^ block)(void) =  ^(void){
+            NSError * err = [self errWithCode:code];
+            [weakself.delegate parserDidFailWithError:err];
+        };
+        [self safeExeBlock:block];
+    }
+}
+
+- (void)deliverFinishDelegateWithLrc:(DDAudioLRC *)alrc{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(parserDidFinishWithLRC:)]) {
+        
+        __weak __typeof(self) weakself = self;
+        void (^ block)(void) =  ^(void){
+            [weakself.delegate parserDidFinishWithLRC:alrc];
+        };
+        [self safeExeBlock:block];
+    }
+}
+
+- (void)safeExeBlock:(dispatch_block_t)block{
+    
+    if ([NSThread isMainThread]) {
+        block();
+    }else{
+        [[NSOperationQueue mainQueue] addOperationWithBlock:block];
+    }
 }
 
 @end
@@ -154,7 +229,7 @@ NSString *kDDLRCMetadataKeyTIME = @"t_time";
     
     NSMutableIndexSet *indexSets = [NSMutableIndexSet indexSet];
     [self.units enumerateObjectsUsingBlock:^(DDAudioLRCUnit *obj, NSUInteger idx, BOOL *stop) {
-        if (obj.sec >= start && obj.sec <= end) {
+        if (start >= obj.sec && start <= obj.end) {
             [indexSets addIndex:idx];
         }
         if (obj.sec > end) {
@@ -164,10 +239,7 @@ NSString *kDDLRCMetadataKeyTIME = @"t_time";
     
     NSUInteger firstIndex = [indexSets firstIndex];
     NSUInteger lastIndex = [indexSets lastIndex];
-    if (firstIndex > 0) {
-        firstIndex --;
-    }
-    
+
     NSUInteger numberOfLines = lastIndex - firstIndex + 1;
     NSRange range = NSMakeRange(firstIndex, numberOfLines);
     return range;
@@ -237,30 +309,42 @@ NSString *kDDLRCMetadataKeyTIME = @"t_time";
 
 @implementation DDAudioLRCUnit
 
-- (void)setSecString:(NSString *)secString
+
+- (void)configSecString:(NSString *)secString andIsEnd:(BOOL)isend
 {
-    _secString = secString;
+    if (!isend) {
+        _secString = secString; //eg 33:33:21
+    }
     
     NSInteger m = 0;   //分
     NSInteger s = 0;   //秒
     NSInteger ms = 0;  //毫秒
     
-    NSScanner *scanner = [NSScanner scannerWithString:secString];
-    NSCharacterSet *set = [NSCharacterSet decimalDigitCharacterSet];
+    NSArray * components = [secString componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@":."]];
+    if (components && components.count >= 2) {
+        m = [components[0] integerValue];
+        s = [components[1] integerValue];
+        if (components.count == 3) {
+            ms = [components[2] integerValue];
+        }else{
+            ms = 0;
+        }
+    }else{
+        s = INT_MAX;
+    }
     
-    [scanner scanUpToCharactersFromSet:set intoString:nil];
-    [scanner scanInteger:&m];
-    [scanner scanUpToCharactersFromSet:set intoString:nil];
-    [scanner scanInteger:&s];
-    [scanner scanUpToCharactersFromSet:set intoString:nil];
-    [scanner scanInteger:&ms];
-    
-    NSTimeInterval time = m*60 + s + ms*0.01;
-    self->_sec = time;
+    NSTimeInterval time = m*60 + s + ms*0.001;
+    if (isend) {
+        self -> _end = time;
+    }else{
+        self->_sec = time;
+    }
 }
+
+
 
 - (NSString *)description
 {
-    return [NSString stringWithFormat:@"%@, timeSecond:%.0f , LRC:%@",[super description],self.sec,self.lrc];
+    return [NSString stringWithFormat:@"%@, start:%.2f end %.2f, LRC:%@",[super description],self.sec,self.end,self.lrc];
 }
 @end

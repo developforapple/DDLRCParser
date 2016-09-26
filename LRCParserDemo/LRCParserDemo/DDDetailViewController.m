@@ -7,9 +7,11 @@
 //
 
 #import "DDDetailViewController.h"
+#import "LRCParser/DDAudioLRCParser.h"
 
-@interface DDDetailViewController ()
+@interface DDDetailViewController ()<DDAudioLRCParserDelegate>
 
+@property (nonatomic,strong)DDAudioLRCParser * lrcParser;
 @end
 
 @implementation DDDetailViewController
@@ -17,31 +19,34 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+
+    self.lrcParser = [[DDAudioLRCParser alloc] init];
     
+    [self.lrcParser parserLRCTextAtFilePath:self.lrcPath WithDelegate:self];
     
-    NSTimeInterval start = 20.f;
-    NSTimeInterval end = 46.f;
-    
-    NSArray *lrcs = [self.lrc LRCUnitsAtTimeSecondFrom:start to:end];
-    NSLog(@"lrcs");
 }
 
 #pragma mark - Table view data source
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    return self.lrc.units.count;
+    return self.lrcParser.AudioLRC.units.count;
 }
 
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"CellIdentifier" forIndexPath:indexPath];
-    
-    DDAudioLRCUnit *unit = [self.lrc LRCUnitAtLine:indexPath.row];
-    cell.textLabel.text = [NSString stringWithFormat:@"%.0f",unit.sec];
+    DDAudioLRCUnit *unit = [self.lrcParser.AudioLRC LRCUnitAtLine:indexPath.row];
+    cell.textLabel.text = [NSString stringWithFormat:@"%.3f",unit.sec];
     cell.detailTextLabel.text = unit.lrc;
     return cell;
+}
+
+#pragma mark - lrc parser delegate
+- (void)parserDidFinishWithLRC:(DDAudioLRC *)AudioLRC{
+
+    [self.tableView reloadData];
 }
 
 @end
